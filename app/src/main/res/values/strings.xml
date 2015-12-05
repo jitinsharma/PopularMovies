@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_movie_detail">Movie Details</string>
+
+    <!--API Key-->
+    <string name="api_key"></string>
+
+    <!--Movie Activity-->
+    <string name="action_sort_rating">Sort by rating</string>
+    <string name="action_sort_popularity">Sort by popularity</string>
+
+    <!--Progress bar-->
+    <string name="no_connection">Unable to connect</string>
+    <string name="loading_movie">Loading movies</string>
+    <string name="grab_popcorn">Grab your popcorn</string>
+    <string name="loading_movie_details">Loading movie details</string>
+    <string name="hang_on">Hang on</string>
+
+    <!--Movie details-->
+    <string name="minute">&#032;min</string>
+    <string name="max_rating">/10</string>
+</resources>
