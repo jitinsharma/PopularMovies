@@ -59,6 +59,9 @@ public class MovieGridFragment extends Fragment{
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(savedInstanceState != null){
+            posterPaths = (ArrayList<MovieItem>)savedInstanceState.get("key");
+        }
         setHasOptionsMenu(true);
     }
 
@@ -120,6 +123,18 @@ public class MovieGridFragment extends Fragment{
         else{
             Snackbar.make(getView(), getString(R.string.no_connection), Snackbar.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // store the data in the fragment
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putParcelableArrayList("key",posterPaths);
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     class FetchMovieTask extends AsyncTask<String,Void,Void>{

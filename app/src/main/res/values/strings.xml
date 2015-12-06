@@ -4,14 +4,15 @@
     <string name="title_activity_movie_detail">Movie Details</string>
 
     <!--API Key-->
-    <string name="api_key"></string>
+    <string name="api_key">979b3de067ed9d5d233d506f478c1e0a</string>
 
     <!--Movie Activity-->
     <string name="action_sort_rating">Sort by rating</string>
     <string name="action_sort_popularity">Sort by popularity</string>
+    <string name="image_error">Unable to load some images</string>
+    <string name="no_connection">Unable to connect</string>
 
     <!--Progress bar-->
-    <string name="no_connection">Unable to connect</string>
     <string name="loading_movie">Loading movies</string>
     <string name="grab_popcorn">Grab your popcorn</string>
     <string name="loading_movie_details">Loading movie details</string>

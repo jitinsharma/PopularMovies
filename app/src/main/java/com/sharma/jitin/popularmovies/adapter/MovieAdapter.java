@@ -48,7 +48,10 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
         MovieItem current = movieItems.get(i);
         Uri uri = Uri.parse(current.getPosterPath());
         Context context = myViewHolder.articleImage.getContext();
-        Picasso.with(context).load(uri)
+        Picasso.with(context)
+                .load(uri)
+                .error(R.string.image_error)
+                .placeholder(R.drawable.placeholder)
                 .into(myViewHolder.articleImage);
     }
 

@@ -94,7 +94,10 @@ public class MovieDetailActivityFragment extends Fragment {
             movieRuntime.setText(runtime);
             movieRating.setText(rating);
             movieDescription.setText(overview);
-            Picasso.with(getContext()).load(M_POSTER_LINK + posterPath)
+            Picasso.with(getContext())
+                    .load(M_POSTER_LINK + posterPath)
+                    .error(R.string.image_error)
+                    .placeholder(R.drawable.placeholder)
                     .into(moviePoster);
             super.onPostExecute(aVoid);
         }
