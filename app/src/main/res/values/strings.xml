@@ -4,7 +4,7 @@
     <string name="title_activity_movie_detail">Movie Details</string>
 
     <!--API Key-->
-    <string name="api_key">979b3de067ed9d5d233d506f478c1e0a</string>
+    <string name="api_key"></string>
 
     <!--Movie Activity-->
     <string name="action_sort_rating">Sort by rating</string>
