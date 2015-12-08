@@ -1,29 +1,20 @@
 package com.sharma.jitin.popularmovies;
 
 import android.app.ProgressDialog;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.sharma.jitin.popularmovies.model.AsyncTaskListener;
 import com.squareup.picasso.Picasso;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -47,6 +38,7 @@ public class MovieDetailActivityFragment extends Fragment {
 
     ProgressDialog progressDialog;
     final String LOG_TAG = this.getClass().getSimpleName();
+    Parcelable state;
 
     public MovieDetailActivityFragment() {
     }
@@ -63,12 +55,38 @@ public class MovieDetailActivityFragment extends Fragment {
         moviePoster = (ImageView)home.findViewById(R.id.movie_detail_image);
         movieDescription = (TextView)home.findViewById(R.id.movie_description);
 
-        FetchMovieDetails fetchMovieDetails = new FetchMovieDetails();
-        fetchMovieDetails.execute(getActivity().getIntent().getStringExtra("movieID"));
+        FetchMovieTask fetchMovieTask = new FetchMovieTask(getContext(), new FetchMovieTaskListener());
+        fetchMovieTask.execute("detail",getActivity().getIntent().getStringExtra("movieID"));
         return home;
     }
 
-    class FetchMovieDetails extends AsyncTask<String,Void,Void> {
+    class FetchMovieTaskListener implements AsyncTaskListener<ArrayList<String>> {
+        final String M_POSTER_LINK = "http://image.tmdb.org/t/p/w185/";
+
+        @Override
+        public void onTaskComplete(ArrayList<String> result) {
+            String[] details;
+            details = result.get(0).split("#");
+            movieTitle.setText(details[0]);
+            movieDescription.setText(details[1]);
+            try {
+                movieDate.setText(convertDate(details[2]));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            movieRuntime.setText(details[3] + getString(R.string.minute));
+            movieRating.setText(details[4] + getString(R.string.max_rating));
+            if(!details[5].contains("null")) {
+                Picasso.with(getContext())
+                        .load(M_POSTER_LINK + details[5])
+                        .error(R.string.image_error)
+                        .placeholder(R.drawable.placeholder)
+                        .into(moviePoster);
+            }
+        }
+    }
+
+    /*class FetchMovieDetails extends AsyncTask<String,Void,Void> {
         @Override
         protected void onPreExecute(){
             progressDialog = ProgressDialog.show(getActivity(), getString(R.string.loading_movie_details), getString(R.string.hang_on));
@@ -185,7 +203,7 @@ public class MovieDetailActivityFragment extends Fragment {
             posterPath = movieDetailJson.getString(M_POSTER_PATH);
             return null;
         }
-    }
+    }*/
 
     public String convertDate(String value)throws Exception{
         String convertedDate;

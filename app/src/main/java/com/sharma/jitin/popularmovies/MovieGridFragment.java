@@ -2,15 +2,14 @@ package com.sharma.jitin.popularmovies;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -20,19 +19,10 @@ import android.view.ViewGroup;
 
 import com.sharma.jitin.popularmovies.Utils.NetworkCheck;
 import com.sharma.jitin.popularmovies.adapter.MovieAdapter;
+import com.sharma.jitin.popularmovies.model.AsyncTaskListener;
 import com.sharma.jitin.popularmovies.model.MovieItem;
 import com.sharma.jitin.popularmovies.model.OnItemClick;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 
 /**
@@ -53,6 +43,9 @@ public class MovieGridFragment extends Fragment{
     final String M_RATING = "rating";
     final String LOG_TAG = this.getClass().getSimpleName();
 
+    Parcelable state;
+    int position;
+
     public MovieGridFragment() {
     }
 
@@ -61,6 +54,8 @@ public class MovieGridFragment extends Fragment{
         super.onCreate(savedInstanceState);
         if(savedInstanceState != null){
             posterPaths = (ArrayList<MovieItem>)savedInstanceState.get("key");
+            movieIds = (ArrayList<String>)savedInstanceState.get("id");
+            ((LinearLayoutManager) movieView.getLayoutManager()).scrollToPosition(position);
         }
         setHasOptionsMenu(true);
     }
@@ -77,12 +72,12 @@ public class MovieGridFragment extends Fragment{
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        FetchMovieTask fetchMovieTask = new FetchMovieTask();
+        FetchMovieTask fetchMovieTask = new FetchMovieTask(getContext(),new FetchMovieTaskListener());
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_sort_popularity) {
             if(networkCheck.isNetworkStatusAvailable(getContext())) {
-                fetchMovieTask.execute(M_POPULARITY);
+                fetchMovieTask.execute("grid", M_POPULARITY);
             }
             else{
                 Snackbar.make(getView(), getString(R.string.no_connection), Snackbar.LENGTH_SHORT).show();
@@ -91,7 +86,7 @@ public class MovieGridFragment extends Fragment{
         }
         if(id == R.id.action_sort_rating){
             if(networkCheck.isNetworkStatusAvailable(getContext())) {
-                fetchMovieTask.execute(M_RATING);
+                fetchMovieTask.execute("grid", M_RATING);
             }
             else{
                 Snackbar.make(getView(), getString(R.string.no_connection), Snackbar.LENGTH_SHORT).show();
@@ -116,9 +111,25 @@ public class MovieGridFragment extends Fragment{
     @Override
     public void onStart(){
         super.onStart();
-        FetchMovieTask fetchMovieTask = new FetchMovieTask();
+        FetchMovieTask fetchMovieTask = new FetchMovieTask(getContext(),new FetchMovieTaskListener());
         if(networkCheck.isNetworkStatusAvailable(getContext())) {
-            fetchMovieTask.execute(M_POPULARITY);
+            //fetchMovieTask.execute("grid", M_POPULARITY);
+            if(posterPaths.size()==0) {
+                fetchMovieTask.execute("grid", M_POPULARITY);
+        }
+            else{
+                movieAdapter = new MovieAdapter(getActivity(),posterPaths);
+                movieView.setAdapter(movieAdapter);
+                movieAdapter.setOnItemClick(new OnItemClick() {
+                    @Override
+                    public void onItemClicked(int position) {
+                        Intent intent = new Intent(getActivity(), MovieDetailActivity.class);
+                        String id = movieIds.get(position);
+                        intent.putExtra("movieID", id);
+                        startActivity(intent);
+                    }
+                });
+            }
         }
         else{
             Snackbar.make(getView(), getString(R.string.no_connection), Snackbar.LENGTH_SHORT).show();
@@ -133,11 +144,39 @@ public class MovieGridFragment extends Fragment{
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putParcelableArrayList("key",posterPaths);
+        savedInstanceState.putParcelableArrayList("key", posterPaths);
+        savedInstanceState.putStringArrayList("id", movieIds);
+        position = ((LinearLayoutManager)movieView.getLayoutManager()).findFirstVisibleItemPosition();
         super.onSaveInstanceState(savedInstanceState);
     }
 
-    class FetchMovieTask extends AsyncTask<String,Void,Void>{
+    class FetchMovieTaskListener implements AsyncTaskListener<ArrayList<String>>{
+        final String M_POSTER_LINK = "http://image.tmdb.org/t/p/w185/";
+        @Override
+        public void onTaskComplete(ArrayList<String> result) {
+            String[] details;
+            movieIds.clear();
+            posterPaths.clear();
+            for(int i = 0; i<result.size(); i++) {
+                details = result.get(i).split(",");
+                movieIds.add(details[0]);
+                posterPaths.add(new MovieItem(M_POSTER_LINK + details[1]));
+            }
+                movieAdapter = new MovieAdapter(getActivity(),posterPaths);
+                movieView.setAdapter(movieAdapter);
+                movieAdapter.setOnItemClick(new OnItemClick() {
+                    @Override
+                    public void onItemClicked(int position) {
+                        Intent intent = new Intent(getActivity(), MovieDetailActivity.class);
+                        String id = movieIds.get(position);
+                        intent.putExtra("movieID", id);
+                        startActivity(intent);
+                    }
+                });
+        }
+    }
+
+    /*class FetchMovieTask extends AsyncTask<String,Void,Void>{
         final String M_POSTER_LINK = "http://image.tmdb.org/t/p/w185/";
         @Override
         protected void onPreExecute(){
@@ -253,5 +292,5 @@ public class MovieGridFragment extends Fragment{
             }
             return null;
         }
-    }
+    }*/
 }
