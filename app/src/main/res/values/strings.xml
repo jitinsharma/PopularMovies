@@ -21,4 +21,9 @@
     <!--Movie details-->
     <string name="minute">&#032;min</string>
     <string name="max_rating">/10</string>
+
+    <string name="trailer_title">Trailers</string>
+    <string name="youtube_link">http://www.youtube.com/watch?v=</string>
+
+    <string name="review_title">Reviews</string>
 </resources>

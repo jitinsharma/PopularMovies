@@ -1,16 +1,27 @@
 package com.sharma.jitin.popularmovies;
 
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.sharma.jitin.popularmovies.adapter.MovieReviewAdapter;
+import com.sharma.jitin.popularmovies.adapter.MovieTrailerAdapter;
 import com.sharma.jitin.popularmovies.model.AsyncTaskListener;
+import com.sharma.jitin.popularmovies.model.MovieReviewItem;
+import com.sharma.jitin.popularmovies.model.MovieTrailerItem;
+import com.sharma.jitin.popularmovies.model.OnItemClick;
 import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
@@ -36,6 +47,12 @@ public class MovieDetailActivityFragment extends Fragment {
     TextView movieRating;
     TextView movieDescription;
 
+    RecyclerView trailerView;
+    MovieTrailerAdapter movieTrailerAdapter;
+
+    RecyclerView movieReviewView;
+    MovieReviewAdapter movieReviewAdapter;
+
     ProgressDialog progressDialog;
     final String LOG_TAG = this.getClass().getSimpleName();
     Parcelable state;
@@ -55,8 +72,20 @@ public class MovieDetailActivityFragment extends Fragment {
         moviePoster = (ImageView)home.findViewById(R.id.movie_detail_image);
         movieDescription = (TextView)home.findViewById(R.id.movie_description);
 
+        trailerView = (RecyclerView)home.findViewById(R.id.movie_trailer_list);
+        movieReviewView = (RecyclerView)home.findViewById(R.id.movie_review_list);
+
         FetchMovieTask fetchMovieTask = new FetchMovieTask(getContext(), new FetchMovieTaskListener());
         fetchMovieTask.execute("detail",getActivity().getIntent().getStringExtra("movieID"));
+
+        //fetchMovieTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "detail",getActivity().getIntent().getStringExtra("movieID"));
+        //fetchMovieTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, "trailer",getActivity().getIntent().getStringExtra("movieID"));
+
+        FetchMovieTask fetchMovieTask2 = new FetchMovieTask(getContext(), new FetchMovieTaskListener());
+        fetchMovieTask2.execute("trailer",getActivity().getIntent().getStringExtra("movieID"));
+
+        FetchMovieTask fetchMovieTask3 = new FetchMovieTask(getContext(), new FetchMovieTaskListener());
+        fetchMovieTask3.execute("review",getActivity().getIntent().getStringExtra("movieID"));
         return home;
     }
 
@@ -67,21 +96,63 @@ public class MovieDetailActivityFragment extends Fragment {
         public void onTaskComplete(ArrayList<String> result) {
             String[] details;
             details = result.get(0).split("#");
-            movieTitle.setText(details[0]);
-            movieDescription.setText(details[1]);
-            try {
-                movieDate.setText(convertDate(details[2]));
-            } catch (Exception e) {
-                e.printStackTrace();
+            if(details[0].equalsIgnoreCase("trailer")){
+                final ArrayList<MovieTrailerItem> trailerItems = new ArrayList<>();
+
+                for(int i=1; i<details.length; i++){
+                    MovieTrailerItem movieTrailerItem = new MovieTrailerItem();
+                    movieTrailerItem.setTrailerId(details[i]);
+                    trailerItems.add(movieTrailerItem);
+                }
+                movieTrailerAdapter = new MovieTrailerAdapter(getActivity(), trailerItems);
+                trailerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+                trailerView.setItemAnimator(new DefaultItemAnimator());
+                trailerView.setAdapter(movieTrailerAdapter);
+                movieTrailerAdapter.setOnItemClick(new OnItemClick() {
+                    @Override
+                    public void onItemClicked(int position) {
+                        try{
+                            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + trailerItems.get(position).getTrailerId()));
+                            startActivity(intent);
+                        }catch (ActivityNotFoundException ex){
+                            Intent intent=new Intent(Intent.ACTION_VIEW,
+                                    Uri.parse(getString(R.string.youtube_link) + trailerItems.get(position).getTrailerId()));
+                            startActivity(intent);
+                        }
+                    }
+                });
             }
-            movieRuntime.setText(details[3] + getString(R.string.minute));
-            movieRating.setText(details[4] + getString(R.string.max_rating));
-            if(!details[5].contains("null")) {
-                Picasso.with(getContext())
-                        .load(M_POSTER_LINK + details[5])
-                        .error(R.string.image_error)
-                        .placeholder(R.drawable.placeholder)
-                        .into(moviePoster);
+            else if(details[0].equalsIgnoreCase("review")){
+                ArrayList<MovieReviewItem> authorNames = new ArrayList<>();
+                ArrayList<MovieReviewItem> contents = new ArrayList<>();
+
+                for(int i=0; i<result.size(); i++){
+                    details = result.get(i).split("#");
+                    authorNames.add(new MovieReviewItem(details[1]));
+                    contents.add(new MovieReviewItem(details[2]));
+                }
+                movieReviewAdapter = new MovieReviewAdapter(getActivity(), authorNames, contents);
+                movieReviewView.setLayoutManager(new LinearLayoutManager(getActivity()));
+                movieReviewView.setItemAnimator(new DefaultItemAnimator());
+                movieReviewView.setAdapter(movieReviewAdapter);
+            }
+            else {
+                movieTitle.setText(details[0]);
+                movieDescription.setText(details[1]);
+                try {
+                    movieDate.setText(convertDate(details[2]));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                movieRuntime.setText(details[3] + getString(R.string.minute));
+                movieRating.setText(details[4] + getString(R.string.max_rating));
+                if (!details[5].contains("null")) {
+                    Picasso.with(getContext())
+                            .load(M_POSTER_LINK + details[5])
+                            .error(R.string.image_error)
+                            .placeholder(R.drawable.placeholder)
+                            .into(moviePoster);
+                }
             }
         }
     }

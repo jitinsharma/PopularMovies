@@ -8,7 +8,6 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -55,7 +54,7 @@ public class MovieGridFragment extends Fragment{
         if(savedInstanceState != null){
             posterPaths = (ArrayList<MovieItem>)savedInstanceState.get("key");
             movieIds = (ArrayList<String>)savedInstanceState.get("id");
-            ((LinearLayoutManager) movieView.getLayoutManager()).scrollToPosition(position);
+            //((LinearLayoutManager) movieView.getLayoutManager()).scrollToPosition(position);
         }
         setHasOptionsMenu(true);
     }
@@ -146,7 +145,7 @@ public class MovieGridFragment extends Fragment{
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putParcelableArrayList("key", posterPaths);
         savedInstanceState.putStringArrayList("id", movieIds);
-        position = ((LinearLayoutManager)movieView.getLayoutManager()).findFirstVisibleItemPosition();
+        //position = ((LinearLayoutManager)movieView.getLayoutManager()).findFirstVisibleItemPosition();
         super.onSaveInstanceState(savedInstanceState);
     }
 

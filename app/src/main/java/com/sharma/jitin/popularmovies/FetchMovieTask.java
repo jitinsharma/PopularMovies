@@ -35,16 +35,16 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
     }
     @Override
     protected void onPreExecute(){
-        progressDialog = ProgressDialog.show(context, context.getString(R.string.loading_movie), context.getString(R.string.grab_popcorn));
+        //progressDialog = ProgressDialog.show(context, context.getString(R.string.loading_movie), context.getString(R.string.grab_popcorn));
         super.onPreExecute();
     }
 
     @Override
     protected void onPostExecute(ArrayList<String> arrayList) {
         asyncTaskListener.onTaskComplete(arrayList);
-        if(progressDialog.isShowing()){
+       /* if(progressDialog.isShowing()){
             progressDialog.dismiss();
-        }
+        }*/
         super.onPostExecute(arrayList);
     }
 
@@ -66,6 +66,20 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
                 builtUri = Uri.parse(movieAPIItem.getMOVIE_DETAILS_BASE_URL()).buildUpon()
                         .appendPath(params[1])
                         .appendQueryParameter(movieAPIItem.getAPI_KEY(),context.getString(R.string.api_key))
+                        .build();
+                break;
+            case "trailer":
+                builtUri = Uri.parse(movieAPIItem.getMOVIE_DETAILS_BASE_URL()).buildUpon()
+                        .appendPath(params[1])
+                        .appendQueryParameter(movieAPIItem.getAPI_KEY(), context.getString(R.string.api_key))
+                        .appendPath(movieAPIItem.getMOVIE_TRAILER())
+                        .build();
+                break;
+            case "review":
+                builtUri = Uri.parse(movieAPIItem.getMOVIE_DETAILS_BASE_URL()).buildUpon()
+                        .appendPath(params[1])
+                        .appendQueryParameter(movieAPIItem.getAPI_KEY(),context.getString(R.string.api_key))
+                        .appendPath(movieAPIItem.getMOVIE_REVIEW())
                         .build();
                 break;
         }
@@ -148,8 +162,13 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
         final String M_RUNTIME = "runtime";
         final String M_RATING = "vote_average";
 
+        final String M_TRAILER_KEY = "key";
+
+        final String M_REVIEW_AUTHOR = "author";
+        final String M_REVIEW_CONTENT = "content";
 
         JSONObject movieDetailJson = new JSONObject(movieJson);
+
         data.clear();
         switch (callType){
             case "grid":
@@ -166,6 +185,20 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
                         movieDetailJson.getString(M_RUNTIME) + "#" +
                         movieDetailJson.getString(M_RATING) + "#" +
                         movieDetailJson.getString(M_POSTER_PATH));
+                break;
+            case "trailer":
+                JSONArray resultArray2 = movieDetailJson.getJSONArray(M_RESULT);
+                for(int i=0; i<resultArray2.length(); i++){
+                    JSONObject movieDetails = resultArray2.getJSONObject(i);
+                    data.add("trailer" + "#" + movieDetails.getString(M_TRAILER_KEY));
+                }
+                break;
+            case "review":
+                JSONArray resultArray3 = movieDetailJson.getJSONArray(M_RESULT);
+                for(int i=0; i<resultArray3.length(); i++){
+                    JSONObject movieDetails = resultArray3.getJSONObject(i);
+                    data.add("review" + "#" + movieDetails.getString(M_REVIEW_AUTHOR) + "#" + movieDetails.getString(M_REVIEW_CONTENT));
+                }
                 break;
         }
         return data;

@@ -18,6 +18,18 @@ public class MovieAPIItem{
     final String MOVIE_DETAILS_BASE_URL =
             "http://api.themoviedb.org/3/movie/";
 
+    final String MOVIE_TRAILER = "videos";
+
+    final String MOVIE_REVIEW = "reviews";
+
+    public String getMOVIE_TRAILER() {
+        return MOVIE_TRAILER;
+    }
+
+    public String getMOVIE_REVIEW() {
+        return MOVIE_REVIEW;
+    }
+
     public String getM_POSTER_LINK() {
         return M_POSTER_LINK;
     }
