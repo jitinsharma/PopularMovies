@@ -1,5 +1,6 @@
 package com.sharma.jitin.popularmovies.model;
 
+import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -9,10 +10,30 @@ import android.os.Parcelable;
 public class MovieItem implements Parcelable {
     String posterPath;
     String movieId;
+    byte[] favoritePoster;
+
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
+    }
+
+    Bitmap bitmap;
+
+    public byte[] getFavoritePoster() {
+        return favoritePoster;
+    }
+
+    public void setFavoritePoster(byte[] favoritePoster) {
+        this.favoritePoster = favoritePoster;
+    }
 
     protected MovieItem(Parcel in) {
         posterPath = in.readString();
         movieId = in.readString();
+        //favoritePoster = in.readByteArray(getFavoritePoster());
     }
 
     public static final Creator<MovieItem> CREATOR = new Creator<MovieItem>() {
@@ -47,6 +68,10 @@ public class MovieItem implements Parcelable {
         this.posterPath = posterPath;
     }
 
+    public MovieItem(byte[] favoritePoster) {this.favoritePoster = favoritePoster;}
+
+    public MovieItem(Bitmap bitmap) {this.bitmap = bitmap;}
+
     @Override
     public int describeContents() {
         return 0;
@@ -56,5 +81,6 @@ public class MovieItem implements Parcelable {
     public void writeToParcel(Parcel parcel, int i) {
         parcel.writeString(posterPath);
         parcel.writeString(movieId);
+        parcel.writeByteArray(favoritePoster);
     }
 }

@@ -17,7 +17,6 @@ import java.util.List;
  * Created by jitin on 02-01-2016.
  */
 public class MovieTrailerAdapter extends RecyclerView.Adapter<MovieTrailerAdapter.ViewHolder>{
-    //private LayoutInflater inflater;
     private List<MovieTrailerItem> movieTrailerItems;
     OnItemClick onItemClick;
     Context context;
@@ -31,7 +30,6 @@ public class MovieTrailerAdapter extends RecyclerView.Adapter<MovieTrailerAdapte
     }
 
     public MovieTrailerAdapter(Context context, List<MovieTrailerItem> movieTrailerItems) {
-        //inflater = LayoutInflater.from(context);
         this.context = context;
         this.movieTrailerItems = movieTrailerItems;
     }

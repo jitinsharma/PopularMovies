@@ -9,14 +9,14 @@
     <!--Movie Activity-->
     <string name="action_sort_rating">Sort by rating</string>
     <string name="action_sort_popularity">Sort by popularity</string>
+    <string name="action_favorite">Favorites</string>
+
     <string name="image_error">Unable to load some images</string>
     <string name="no_connection">Unable to connect</string>
 
     <!--Progress bar-->
-    <string name="loading_movie">Loading movies</string>
-    <string name="grab_popcorn">Grab your popcorn</string>
-    <string name="loading_movie_details">Loading movie details</string>
-    <string name="hang_on">Hang on</string>
+    <string name="loading_movie">Loading</string>
+    <string name="grab_popcorn">Please Wait</string>
 
     <!--Movie details-->
     <string name="minute">&#032;min</string>
@@ -26,4 +26,11 @@
     <string name="youtube_link">http://www.youtube.com/watch?v=</string>
 
     <string name="review_title">Reviews</string>
+
+    <string name="favorite_text">Add to Favorites</string>
+    <string name="add_favorite">Added to Favorites</string>
+    <string name="remove_favorites">Removed from Favorites</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

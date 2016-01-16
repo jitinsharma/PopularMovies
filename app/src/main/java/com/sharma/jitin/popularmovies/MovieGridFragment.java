@@ -1,9 +1,8 @@
 package com.sharma.jitin.popularmovies;
 
-import android.app.ProgressDialog;
-import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -16,8 +15,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.sharma.jitin.popularmovies.Utils.NetworkCheck;
+import com.sharma.jitin.popularmovies.Utils.Utility;
+import com.sharma.jitin.popularmovies.adapter.FavoritesAdapter;
 import com.sharma.jitin.popularmovies.adapter.MovieAdapter;
+import com.sharma.jitin.popularmovies.data.MoviesContract;
 import com.sharma.jitin.popularmovies.model.AsyncTaskListener;
 import com.sharma.jitin.popularmovies.model.MovieItem;
 import com.sharma.jitin.popularmovies.model.OnItemClick;
@@ -31,19 +32,39 @@ public class MovieGridFragment extends Fragment{
     View imageView;
     RecyclerView movieView;
     MovieAdapter movieAdapter;
+    FavoritesAdapter favoritesAdapter;
 
     ArrayList<MovieItem> posterPaths = new ArrayList<>();
     ArrayList<String> movieIds = new ArrayList<>();
-
-    ProgressDialog progressDialog;
-    NetworkCheck networkCheck = new NetworkCheck();
+    ArrayList<Bitmap> bitmaps = new ArrayList<>();
+    ArrayList<MovieItem> savedBitmaps = new ArrayList<>();
 
     final String M_POPULARITY = "popularity";
     final String M_RATING = "rating";
+    final String M_FAVORITES = "favorites";
     final String LOG_TAG = this.getClass().getSimpleName();
 
-    Parcelable state;
-    int position;
+    String sortBy = M_POPULARITY;
+
+    public static final int MOVIE_POSTER = 0;
+
+    public static final String[] MOVIE_COLUMNS = {
+            MoviesContract.MovieEntry._ID,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_ID,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_TITLE,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_OVERVIEW,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_POSTER,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_RUNTIME,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_RATING,
+            MoviesContract.MovieEntry.COLUMN_MOVIE_DATE
+    };
+
+    public interface Callback {
+        /**
+         * DetailFragmentCallback for when an item has been selected.
+         */
+        void onItemSelected(String id);
+    }
 
     public MovieGridFragment() {
     }
@@ -54,7 +75,8 @@ public class MovieGridFragment extends Fragment{
         if(savedInstanceState != null){
             posterPaths = (ArrayList<MovieItem>)savedInstanceState.get("key");
             movieIds = (ArrayList<String>)savedInstanceState.get("id");
-            //((LinearLayoutManager) movieView.getLayoutManager()).scrollToPosition(position);
+            savedBitmaps = (ArrayList<MovieItem>)savedInstanceState.get("favorite");
+            sortBy = savedInstanceState.getString("sort");
         }
         setHasOptionsMenu(true);
     }
@@ -75,7 +97,8 @@ public class MovieGridFragment extends Fragment{
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_sort_popularity) {
-            if(networkCheck.isNetworkStatusAvailable(getContext())) {
+            if(Utility.isNetworkStatusAvailable(getContext())) {
+                sortBy = M_POPULARITY;
                 fetchMovieTask.execute("grid", M_POPULARITY);
             }
             else{
@@ -84,14 +107,48 @@ public class MovieGridFragment extends Fragment{
             return true;
         }
         if(id == R.id.action_sort_rating){
-            if(networkCheck.isNetworkStatusAvailable(getContext())) {
+            if(Utility.isNetworkStatusAvailable(getContext())) {
+                sortBy = M_RATING;
                 fetchMovieTask.execute("grid", M_RATING);
             }
             else{
                 Snackbar.make(getView(), getString(R.string.no_connection), Snackbar.LENGTH_SHORT).show();
             }
         }
+        if (id == R.id.action_favorite){
+            sortBy = M_FAVORITES;
+            movieIds.clear();
+            bitmaps.clear();
+            Cursor cursor = getContext().getContentResolver().query(
+                    MoviesContract.MovieEntry.CONTENT_URI,
+                    MOVIE_COLUMNS,
+                    null,
+                    null,
+                    null
+            );
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    int posterIndex = cursor.getColumnIndex(MoviesContract.MovieEntry.COLUMN_MOVIE_POSTER);
+                    int idIndex = cursor.getColumnIndex(MoviesContract.MovieEntry.COLUMN_MOVIE_ID);
 
+                    movieIds.add(cursor.getString(idIndex));
+                    byte[] posterBytes = cursor.getBlob(posterIndex);
+
+                    bitmaps.add(Utility.convertBytesToBitmap(posterBytes));
+                    savedBitmaps.add(new MovieItem(Utility.convertBytesToBitmap(posterBytes)));
+                } while (cursor.moveToNext());
+                cursor.close();
+            }
+            favoritesAdapter = new FavoritesAdapter(getActivity(), bitmaps);
+            movieView.setAdapter(favoritesAdapter);
+            favoritesAdapter.setOnItemClick(new OnItemClick() {
+                @Override
+                public void onItemClicked(int position) {
+                    String id = movieIds.get(position);
+                    ((Callback)getActivity()).onItemSelected(id);
+                }
+            });
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -111,41 +168,73 @@ public class MovieGridFragment extends Fragment{
     public void onStart(){
         super.onStart();
         FetchMovieTask fetchMovieTask = new FetchMovieTask(getContext(),new FetchMovieTaskListener());
-        if(networkCheck.isNetworkStatusAvailable(getContext())) {
-            //fetchMovieTask.execute("grid", M_POPULARITY);
-            if(posterPaths.size()==0) {
+        if(Utility.isNetworkStatusAvailable(getContext())) {
+            if(posterPaths.size()==0 && savedBitmaps.size()==0) {
                 fetchMovieTask.execute("grid", M_POPULARITY);
-        }
+            }
+            else if(sortBy.equalsIgnoreCase(M_FAVORITES) && savedBitmaps.size()!=0){
+                movieIds.clear();
+                bitmaps.clear();
+                getFavoriteData();
+                favoritesAdapter = new FavoritesAdapter(getActivity(), bitmaps);
+                movieView.setAdapter(favoritesAdapter);
+                favoritesAdapter.setOnItemClick(new OnItemClick() {
+                    @Override
+                    public void onItemClicked(int position) {
+                        String id = movieIds.get(position);
+                        ((Callback)getActivity()).onItemSelected(id);
+                    }
+                });
+            }
             else{
                 movieAdapter = new MovieAdapter(getActivity(),posterPaths);
                 movieView.setAdapter(movieAdapter);
                 movieAdapter.setOnItemClick(new OnItemClick() {
                     @Override
                     public void onItemClicked(int position) {
-                        Intent intent = new Intent(getActivity(), MovieDetailActivity.class);
                         String id = movieIds.get(position);
-                        intent.putExtra("movieID", id);
-                        startActivity(intent);
+                        ((Callback)getActivity()).onItemSelected(id);
                     }
                 });
             }
         }
+        else if(sortBy.equalsIgnoreCase(M_FAVORITES) && savedBitmaps.size()!=0){
+            movieIds.clear();
+            bitmaps.clear();
+            getFavoriteData();
+            favoritesAdapter = new FavoritesAdapter(getActivity(), bitmaps);
+            movieView.setAdapter(favoritesAdapter);
+            favoritesAdapter.setOnItemClick(new OnItemClick() {
+                @Override
+                public void onItemClicked(int position) {
+                    String id = movieIds.get(position);
+                    ((Callback)getActivity()).onItemSelected(id);
+                }
+            });
+        }
         else{
+            movieIds.clear();
+            bitmaps.clear();
+            getFavoriteData();
+            favoritesAdapter = new FavoritesAdapter(getActivity(), bitmaps);
+            movieView.setAdapter(favoritesAdapter);
+            favoritesAdapter.setOnItemClick(new OnItemClick() {
+                @Override
+                public void onItemClicked(int position) {
+                    String id = movieIds.get(position);
+                    ((Callback)getActivity()).onItemSelected(id);
+                }
+            });
             Snackbar.make(getView(), getString(R.string.no_connection), Snackbar.LENGTH_SHORT).show();
         }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        // store the data in the fragment
     }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         savedInstanceState.putParcelableArrayList("key", posterPaths);
         savedInstanceState.putStringArrayList("id", movieIds);
-        //position = ((LinearLayoutManager)movieView.getLayoutManager()).findFirstVisibleItemPosition();
+        savedInstanceState.putParcelableArrayList("favorite", savedBitmaps);
+        savedInstanceState.putString("sort", sortBy);
         super.onSaveInstanceState(savedInstanceState);
     }
 
@@ -166,130 +255,33 @@ public class MovieGridFragment extends Fragment{
                 movieAdapter.setOnItemClick(new OnItemClick() {
                     @Override
                     public void onItemClicked(int position) {
-                        Intent intent = new Intent(getActivity(), MovieDetailActivity.class);
                         String id = movieIds.get(position);
-                        intent.putExtra("movieID", id);
-                        startActivity(intent);
+                        ((Callback)getActivity()).onItemSelected(id);
                     }
                 });
         }
     }
 
-    /*class FetchMovieTask extends AsyncTask<String,Void,Void>{
-        final String M_POSTER_LINK = "http://image.tmdb.org/t/p/w185/";
-        @Override
-        protected void onPreExecute(){
-            progressDialog = ProgressDialog.show(getActivity(), getString(R.string.loading_movie), getString(R.string.grab_popcorn));
-            super.onPreExecute();
+    public void getFavoriteData(){
+        Cursor cursor = getContext().getContentResolver().query(
+                MoviesContract.MovieEntry.CONTENT_URI,
+                MOVIE_COLUMNS,
+                null,
+                null,
+                null
+        );
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                int posterIndex = cursor.getColumnIndex(MoviesContract.MovieEntry.COLUMN_MOVIE_POSTER);
+                int idIndex = cursor.getColumnIndex(MoviesContract.MovieEntry.COLUMN_MOVIE_ID);
+
+                movieIds.add(cursor.getString(idIndex));
+                byte[] posterBytes = cursor.getBlob(posterIndex);
+
+                bitmaps.add(Utility.convertBytesToBitmap(posterBytes));
+                savedBitmaps.add(new MovieItem(Utility.convertBytesToBitmap(posterBytes)));
+            } while (cursor.moveToNext());
+            cursor.close();
         }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            if(progressDialog.isShowing()){
-                progressDialog.dismiss();
-            }
-            movieAdapter = new MovieAdapter(getActivity(),posterPaths);
-            movieView.setAdapter(movieAdapter);
-            movieAdapter.setOnItemClick(new OnItemClick() {
-                @Override
-                public void onItemClicked(int position) {
-                    Intent intent = new Intent(getActivity(),MovieDetailActivity.class);
-                    String id = movieIds.get(position);
-                    intent.putExtra("movieID", id);
-                    startActivity(intent);
-                }
-            });
-            super.onPostExecute(aVoid);
-        }
-
-        @Override
-        protected Void doInBackground(String... params) {
-            HttpURLConnection urlConnection = null;
-            BufferedReader reader = null;
-            String movieJson = null;
-            try {
-                final String MOVIE_BASE_URL =
-                        "http://api.themoviedb.org/3/discover/movie?";
-                final String SORT_PARAM = "sort_by";
-                final String SORT_BY = ".desc";
-                final String API_KEY = "api_key";
-
-                Uri builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_PARAM, params[0] + SORT_BY)
-                        .appendQueryParameter(API_KEY, getString(R.string.api_key))
-                        .build();
-
-                URL url = new URL(builtUri.toString());
-
-                urlConnection = (HttpURLConnection) url.openConnection();
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-
-                // Read the input stream into a String
-                InputStream inputStream = urlConnection.getInputStream();
-                StringBuffer buffer = new StringBuffer();
-                if (inputStream == null) {
-                    // Nothing to do.
-                    return null;
-                }
-                reader = new BufferedReader(new InputStreamReader(inputStream));
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
-                    // But it does make debugging a *lot* easier if you print out the completed
-                    // buffer for debugging.
-                    buffer.append(line + "\n");
-                }
-
-                if (buffer.length() == 0) {
-                    // Stream was empty.  No point in parsing.
-                    return null;
-                }
-                movieJson = buffer.toString();
-
-            }
-            catch (IOException e){
-
-            }
-            finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect();
-                }
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (final IOException e) {
-                        Log.e(LOG_TAG, "Error closing stream", e);
-                    }
-                }
-                try {
-                    return getMovieData(movieJson);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-        }
-
-        public Void getMovieData(String movieJson)throws JSONException{
-
-            final String M_RESULT = "results";
-            final String M_ID = "id";
-            final String M_POSTER_PATH = "poster_path";
-
-
-            JSONObject forecastJson = new JSONObject(movieJson);
-            JSONArray resultArray = forecastJson.getJSONArray(M_RESULT);
-
-            movieIds.clear();
-            posterPaths.clear();
-            for(int i=0; i<resultArray.length(); i++){
-                JSONObject movieDetails = resultArray.getJSONObject(i);
-                movieIds.add(movieDetails.getString(M_ID));
-                posterPaths.add(new MovieItem(M_POSTER_LINK + movieDetails.getString(M_POSTER_PATH)));
-            }
-            return null;
-        }
-    }*/
+    }
 }

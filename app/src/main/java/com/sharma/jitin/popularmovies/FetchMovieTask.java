@@ -35,16 +35,16 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
     }
     @Override
     protected void onPreExecute(){
-        //progressDialog = ProgressDialog.show(context, context.getString(R.string.loading_movie), context.getString(R.string.grab_popcorn));
+        progressDialog = ProgressDialog.show(context, context.getString(R.string.loading_movie), context.getString(R.string.grab_popcorn));
         super.onPreExecute();
     }
 
     @Override
     protected void onPostExecute(ArrayList<String> arrayList) {
         asyncTaskListener.onTaskComplete(arrayList);
-       /* if(progressDialog.isShowing()){
+        if(progressDialog.isShowing()){
             progressDialog.dismiss();
-        }*/
+        }
         super.onPostExecute(arrayList);
     }
 
@@ -55,7 +55,7 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
         String movieJson = null;
         Uri builtUri = Uri.EMPTY;
         MovieAPIItem movieAPIItem = new MovieAPIItem();
-        switch (params[0]){
+        switch (params[0]) {
             case "grid":
                 builtUri = Uri.parse(movieAPIItem.getMOVIE_BASE_URL()).buildUpon()
                         .appendQueryParameter(movieAPIItem.getSORT_PARAM(), params[1] + movieAPIItem.getSORT_BY())
@@ -65,7 +65,7 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
             case "detail":
                 builtUri = Uri.parse(movieAPIItem.getMOVIE_DETAILS_BASE_URL()).buildUpon()
                         .appendPath(params[1])
-                        .appendQueryParameter(movieAPIItem.getAPI_KEY(),context.getString(R.string.api_key))
+                        .appendQueryParameter(movieAPIItem.getAPI_KEY(), context.getString(R.string.api_key))
                         .build();
                 break;
             case "trailer":
@@ -78,23 +78,12 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
             case "review":
                 builtUri = Uri.parse(movieAPIItem.getMOVIE_DETAILS_BASE_URL()).buildUpon()
                         .appendPath(params[1])
-                        .appendQueryParameter(movieAPIItem.getAPI_KEY(),context.getString(R.string.api_key))
+                        .appendQueryParameter(movieAPIItem.getAPI_KEY(), context.getString(R.string.api_key))
                         .appendPath(movieAPIItem.getMOVIE_REVIEW())
                         .build();
                 break;
         }
         try {
-            /*final String MOVIE_BASE_URL =
-                    "http://api.themoviedb.org/3/discover/movie?";
-            final String SORT_PARAM = "sort_by";
-            final String SORT_BY = ".desc";
-            final String API_KEY = "api_key";
-
-            builtUri = Uri.parse(MOVIE_BASE_URL).buildUpon()
-                    .appendQueryParameter(SORT_PARAM, params[0] + SORT_BY)
-                    .appendQueryParameter(API_KEY, context.getString(R.string.api_key))
-                    .build();*/
-
             URL url = new URL(builtUri.toString());
 
             urlConnection = (HttpURLConnection) url.openConnection();
@@ -124,11 +113,9 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
             }
             movieJson = buffer.toString();
 
-        }
-        catch (IOException e){
+        } catch (IOException e) {
 
-        }
-        finally {
+        } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -144,8 +131,9 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            return null;
+            //return null;
         }
+        return null;
     }
 
     public ArrayList<String> getMovieData(String callType, String movieJson)throws JSONException {
@@ -166,8 +154,11 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
 
         final String M_REVIEW_AUTHOR = "author";
         final String M_REVIEW_CONTENT = "content";
+        JSONObject movieDetailJson = null;
 
-        JSONObject movieDetailJson = new JSONObject(movieJson);
+        if (movieJson!=null) {
+            movieDetailJson = new JSONObject(movieJson);
+        }
 
         data.clear();
         switch (callType){
@@ -184,7 +175,8 @@ public class FetchMovieTask extends AsyncTask<String,Void,ArrayList<String>> {
                         movieDetailJson.getString(M_RELEASE_DATE) + "#" +
                         movieDetailJson.getString(M_RUNTIME) + "#" +
                         movieDetailJson.getString(M_RATING) + "#" +
-                        movieDetailJson.getString(M_POSTER_PATH));
+                        movieDetailJson.getString(M_POSTER_PATH) + "#" +
+                        movieDetailJson.getString(M_ID));
                 break;
             case "trailer":
                 JSONArray resultArray2 = movieDetailJson.getJSONArray(M_RESULT);

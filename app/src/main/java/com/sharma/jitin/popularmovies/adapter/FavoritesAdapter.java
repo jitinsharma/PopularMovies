@@ -1,7 +1,7 @@
 package com.sharma.jitin.popularmovies.adapter;
 
 import android.content.Context;
-import android.net.Uri;
+import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,19 +9,15 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.sharma.jitin.popularmovies.R;
-import com.sharma.jitin.popularmovies.Utils.Utility;
-import com.sharma.jitin.popularmovies.model.MovieItem;
 import com.sharma.jitin.popularmovies.model.OnItemClick;
-import com.squareup.picasso.NetworkPolicy;
-import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
 /**
  * Created by jitin on 30-11-2015.
  */
-public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
-    List<MovieItem> movieItems;
+public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.ViewHolder>{
+    List<Bitmap> bitmaps;
     OnItemClick onItemClick;
     private LayoutInflater inflater;
 
@@ -33,9 +29,9 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
         this.onItemClick = onItemClick;
     }
 
-    public MovieAdapter(Context context, List<MovieItem> movieItems) {
+    public FavoritesAdapter(Context context, List<Bitmap> bitmaps) {
         inflater = LayoutInflater.from(context);
-        this.movieItems = movieItems;
+        this.bitmaps = bitmaps;
     }
 
     @Override
@@ -47,23 +43,12 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder>{
 
     @Override
     public void onBindViewHolder(ViewHolder myViewHolder, int i) {
-        MovieItem current = movieItems.get(i);
-        Uri uri = Uri.parse(current.getPosterPath());
-        Context context = myViewHolder.articleImage.getContext();
-        if(!uri.toString().contains("null")) {
-            Picasso.with(context)
-                    .load(uri)
-                    .networkPolicy(Utility.isNetworkStatusAvailable(context) ?
-                            NetworkPolicy.NO_CACHE : NetworkPolicy.OFFLINE)
-                    .placeholder(R.drawable.placeholder)
-                    .error(R.string.image_error)
-                    .into(myViewHolder.articleImage);
-        }
+        myViewHolder.articleImage.setImageBitmap(bitmaps.get(i));
     }
 
     @Override
     public int getItemCount() {
-        return movieItems.size();
+        return bitmaps.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
