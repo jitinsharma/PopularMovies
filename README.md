@@ -15,5 +15,5 @@ Concepts implemented
 - Get API key from https://www.themoviedb.org and include in strings.xml
 
 ## Screenshots
-![screen](../master/pics/img1.png)
-![screen](../master/pics/img2.png)
+![screen](../master/pics/img1.jpg)
+![screen](../master/pics/img2.jpg)
