@@ -13,3 +13,7 @@ Concepts implemented
 ## Installation
 - Import the project in android studio
 - Get API key from https://www.themoviedb.org and include in strings.xml
+
+## Screenshots
+![screen](../master/pics/img1.png)
+![screen](../master/pics/img2.png)
